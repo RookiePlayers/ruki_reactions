@@ -8,8 +8,9 @@ import 'package:ruki_reactions/reaction.dart';
 import 'components/more_reactions.dart';
 import 'components/reaction_widget.dart';
 
-enum ReactionsMoreViewMode { popup, bottomSheet }
 
+
+enum ReactionsMoreViewMode { popup, bottomSheet }
 
 class EmojiStyle {
   final double size;
@@ -17,6 +18,7 @@ class EmojiStyle {
   final BorderRadius? borderRadius;
   const EmojiStyle({this.size = 20, this.backgroundColor, this.borderRadius});
 }
+
 
 class Reactions extends StatefulWidget {
   final Function(String)? onReactionSelected;
@@ -102,26 +104,6 @@ class _ReactionsState extends State<Reactions> {
       },
     );
   }
-
-  // Widget _buildMostUsed(BuildContext context) {
-  //   return FutureBuilder(
-  //     future: getMostUsedReactions(limit: widget.limit),
-  //     builder: (context, snapshot) {
-  //       if (snapshot.hasData) {
-  //         if (snapshot.data.runtimeType != List<String>) {
-  //           return _buildReactions(context, defaultReactions);
-  //         }
-  //         List<String> reactions = snapshot.data as List<String>;
-
-  //         reactions = reactions.toSet().toList().sublist(0, widget.limit);
-  //         return _buildReactions(context, reactions);
-  //       } else if (snapshot.hasError) {
-  //         return Text('${snapshot.error}');
-  //       }
-  //       return const CircularProgressIndicator();
-  //     },
-  //   );
-  // }
 
   Widget _buildReactions(BuildContext context, List<String> reactions) {
     return Row(

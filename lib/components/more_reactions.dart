@@ -7,8 +7,6 @@ import 'package:ruki_reactions/components/more_reactions_page_view.dart';
 import 'package:ruki_reactions/misc/flutter_scale_tab.dart';
 import 'package:ruki_reactions/reaction.dart';
 import 'package:ruki_reactions/ruki_reactions.dart';
-import 'package:shimmer/shimmer.dart';
-
 import 'customizable_list.dart';
 import 'reaction_widget.dart';
 
@@ -223,13 +221,7 @@ class _MoreReactionsState extends State<MoreReactions>
                 borderRadius: BorderRadius.circular(5),
               ),
               margin: const EdgeInsets.only(right: 5),
-              child: Shimmer.fromColors(
-                baseColor: Theme.of(context).cardColor,
-                highlightColor: Theme.of(context).highlightColor,
-                child: Container(
-                  color: Theme.of(context).cardColor,
-                ),
-              ),
+              child: Container()
             ),
           ),
         );

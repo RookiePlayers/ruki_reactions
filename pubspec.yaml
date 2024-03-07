@@ -1,22 +1,19 @@
 name: ruki_reactions
-description: "A new Flutter package project."
-version: 0.0.1
-homepage:
+description: "Emoji Reactions for your flutter app. This Package comes with fully customizable reaction experience."
+version: 0.0.1-dev
+homepage: 'https://github.com/RookiePlayers/ruki_reactions'
+repository: 'https://github.com/RookiePlayers/ruki_reactions'
 
 environment:
-  sdk: '>=3.4.0-52.0.dev <4.0.0'
+  sdk: '>=2.17.0 <4.0.0'
   flutter: ">=1.17.0"
 
 dependencies:
-  badges: ^3.1.2
   emojis: ^0.9.9
   flutter:
     sdk: flutter
   flutter_animator: ^3.2.2
-  flutter_scale_tap: ^1.0.5
   popover: ^0.3.0
-  shimmer: ^3.0.0
-  should_rebuild: ^1.0.1
   sqflite: ^2.3.2
   sqflite_common_ffi: ^2.3.2+1
   sqflite_common_ffi_web: ^0.4.2+3
