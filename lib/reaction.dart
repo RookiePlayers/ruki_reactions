@@ -47,7 +47,7 @@ class ReactionProvider {
   ReactionProvider._internal();
 
   Future<void> open() async {
-    if(_isOpened) return;
+   if(_isOpened && (db?.isOpen ?? false)) return;
     try{
       sqfliteFfiInit();
 
@@ -74,7 +74,7 @@ class ReactionProvider {
   }
 
   Future<void> openCustomReactions() async {
-     if(_isOpened) return;
+     if(_isOpened && (db?.isOpen ?? false)) return;
     try{
       sqfliteFfiInit();
     sqfliteFfiInit();

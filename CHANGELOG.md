@@ -27,3 +27,6 @@
 
 ## 0.0.3
 * Custom mode: sqlflite lib wasn't opened properly, fixed.
+
+## 0.0.3-hotfix.1
+* sqlflite lib closed error fix
