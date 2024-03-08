@@ -25,3 +25,4 @@
 ## 0.0.3
 * Fixed: cappedLimit crashing, added min value limiter.
 * Updated example
+* code cleanup
