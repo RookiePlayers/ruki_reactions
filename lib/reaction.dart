@@ -74,6 +74,9 @@ class ReactionProvider {
   }
 
   Future<void> openCustomReactions() async {
+     if(_isOpened) return;
+    try{
+      sqfliteFfiInit();
     sqfliteFfiInit();
     final factory = kIsWeb ? databaseFactoryFfiWeb : databaseFactoryFfi;
     db = await (kIsWeb
@@ -88,6 +91,12 @@ class ReactionProvider {
             $columnCount integer not null,
             $columnTimestamp integer not null)
           ''');
+           _isOpened = true;
+    }catch(e){
+      if(kDebugMode){
+        print('Error opening db: $e');
+      }
+    }
   }
 
   Future<Reaction?> insert(Reaction reaction) async {

@@ -21,8 +21,9 @@
 * Fixed: scrollable reactions list
 * More button can more be brought to the start of the Reactions list using `leadingMoreButton`
 * Fixed: limit is now capped to the size of the default emoji list (19), custom emojis can be added to increase this limit
-
-## 0.0.3
 * Fixed: cappedLimit crashing, added min value limiter.
 * Updated example
 * code cleanup
+
+## 0.0.3
+* Custom mode: sqlflite lib wasn't opened properly, fixed.

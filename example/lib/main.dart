@@ -84,7 +84,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         useHistory: false,
                         limit: 100,
                         customDefaultReactions: ['👍', '👎', '😂', '😢', '😡'],
-                        enableCustom: false,
+                        enableCustom: true,
                         onReactionSelected: (e) {
                           setState(() {
                             emoji = e;
