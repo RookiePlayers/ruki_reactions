@@ -80,3 +80,5 @@ class _MyHomePageState extends State<MyHomePage> {
 | `showVariationsOnHold` | Whether to show variations on hold | `bool` | `true` |
 | `emojiToReplace` | The emoji to replace | `String?` | `null` |
 | `reactionWidgetController` | The controller for the reaction widget | `ReactionWidgetController` | `ReactionWidgetController()` |
+| `customDefaultReactions` | Add default emojis to be displayed | `List<String>?` | `null` |
+| `controller` | A controller for the Reactions backend to manually clear or add data | `ReactionsController?` | `null` | 

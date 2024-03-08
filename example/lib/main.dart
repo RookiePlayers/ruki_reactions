@@ -61,8 +61,9 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar( backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-         title: Text(widget.title),
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text(widget.title),
       ),
       body: SizedBox(
         width: MediaQuery.of(context).size.width,
@@ -70,22 +71,28 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 20),),
-            Center(
-              child: SizedBox(
-                width: 300,
-                child: Reactions(
-                  onReactionSelected: (e){
-                    setState(() {
-                      emoji = e;
-                    });
-                  },
-                )
-              )
+            Text(
+              emoji,
+              style: const TextStyle(fontSize: 20),
             ),
+            Center(
+                child: SizedBox(
+                    width: 300,
+                    child: Reactions(
+                      useHistory: false,
+                      limit: 100,
+                      customDefaultReactions: ['👍', '👎', '😂', '😢', '😡'],
+                      leadingMoreButton: true,
+                      enableCustom: false,
+                      onReactionSelected: (e) {
+                        setState(() {
+                          emoji = e;
+                        });
+                      },
+                    ))),
           ],
         ),
       ),
-     );
+    );
   }
 }

@@ -273,9 +273,8 @@ class _MoreReactionsState extends State<MoreReactions>
   }
 
   Future<List<String>> getRecentReactions(BuildContext context) async {
-    ReactionProvider provider = ReactionProvider();
     List<Reaction> reactions =
-        await provider.getRecentlyUsedReactions(limit: widget.maxRecentEmojis);
+        await ReactionProvider.instance.getRecentlyUsedReactions(limit: widget.maxRecentEmojis);
     return reactions.map((e) => e.emoji).toList();
   }
 

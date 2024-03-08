@@ -1,5 +1,7 @@
+import 'dart:math';
 
 import 'package:emojis/emoji.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ruki_reactions/color_extensions.dart';
 import 'package:ruki_reactions/misc/flutter_scale_tab.dart';
@@ -7,8 +9,6 @@ import 'package:ruki_reactions/reaction.dart';
 
 import 'components/more_reactions.dart';
 import 'components/reaction_widget.dart';
-
-
 
 enum ReactionsMoreViewMode { popup, bottomSheet }
 
@@ -19,10 +19,18 @@ class EmojiStyle {
   const EmojiStyle({this.size = 20, this.backgroundColor, this.borderRadius});
 }
 
+class ReactionsController {
+  Function clearHistory = () {};
+  Function addCustomReaction = (String r) {};
+  Function removeCustomReaction = (String r) {};
+  Function clearAllCustomReactions = () {};
+}
 
 class Reactions extends StatefulWidget {
   final Function(String)? onReactionSelected;
+  final List<String>? customDefaultReactions;
   final ReactionsMoreViewMode moreViewMode;
+  final ReactionsController? controller;
   final bool allowMoreView;
   final Icon? moreIcon;
   final EmojiStyle emojiStyle;
@@ -39,16 +47,22 @@ class Reactions extends StatefulWidget {
   final double? emojiHorizontalFit;
   final double? emojiVerticalFit;
   final bool showVariationsOnHold;
+  final bool leadingMoreButton;
+  final Widget? customLoader;
 
   Reactions(
       {super.key,
       this.onReactionSelected,
       this.useHistory = true,
+      this.customLoader,
+      this.controller,
+      this.customDefaultReactions,
       this.allowMoreView = true,
       this.enableCustom = false,
       this.disableSkinTone = true,
       this.showVariationsOnHold = true,
       this.diableSkinToneGroupingForMoreView = false,
+      this.leadingMoreButton = false,
       this.recentEmojiPerPage,
       this.moreViewMode = ReactionsMoreViewMode.popup,
       this.moreIcon,
@@ -60,6 +74,13 @@ class Reactions extends StatefulWidget {
       this.displayEmojiGroups = false,
       this.moreEmojiStyle = const EmojiStyle(),
       this.emojiStyle = const EmojiStyle()}) {
+    //check for a valid emoji
+    if (customDefaultReactions != null) {
+      //assert(customDefaultReactions!.any((element) => !RegExp('[:;][a-zA-Z0-9_]+').hasMatch(element)));
+    }
+    if (customDefaultReactions != null) {
+      defaultReactions.addAll(customDefaultReactions!);
+    }
     addAllDefaultToCustom();
   }
 
@@ -73,6 +94,43 @@ class _ReactionsState extends State<Reactions> {
   final ReactionWidgetController _reactionWidgetController =
       ReactionWidgetController();
 
+  int cappedLimit = 6;
+  @override
+  void initState() {
+    cappedLimit = min(widget.limit, defaultReactions.length + (widget.customDefaultReactions?.length ?? 0));
+    if(widget.limit > defaultReactions.length  + (widget.customDefaultReactions?.length ?? 0)){
+      if(kDebugMode){
+        print('Limit is greater than default reactions (${defaultReactions.length}), feel free to add custom reactions');
+      }
+    }
+    super.initState();
+    if (widget.controller != null) {
+      widget.controller!.clearHistory = () {
+        ReactionProvider.instance.clearHistory();
+        setState(() {});
+      };
+      widget.controller!.addCustomReaction = (String r) {
+        ReactionProvider.instance.insert(Reaction(
+            emoji: r, timestamp: DateTime.now().millisecondsSinceEpoch));
+        setState(() {});
+      };
+      widget.controller!.removeCustomReaction = (String r) {
+        ReactionProvider.instance.removeCustomReaction(r);
+        setState(() {});
+      };
+      widget.controller!.clearAllCustomReactions = () {
+        ReactionProvider.instance.clearCustomReactions();
+        setState(() {});
+      };
+    }
+  }
+
+  @override
+  void dispose() {
+    ReactionProvider.instance.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -83,8 +141,10 @@ class _ReactionsState extends State<Reactions> {
   Widget _buildFromCustomEmoji(BuildContext context) {
     return FutureBuilder(
       future: widget.enableCustom
-          ? getCustomReactions(limit: widget.limit)
-          : getRecentlyAdded(limit: widget.limit),
+          ? getCustomReactions(limit: cappedLimit)
+          : getRecentlyAdded(
+              limit: cappedLimit,
+              customDefaultReactions: widget.customDefaultReactions),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           if (snapshot.data.runtimeType != List<String>) {
@@ -92,27 +152,61 @@ class _ReactionsState extends State<Reactions> {
           }
           List<String> reactions = snapshot.data as List<String>;
           reactions = reactions.toSet().toList();
-          if (reactions.length < widget.limit) {
+          if (reactions.length < cappedLimit) {
             reactions.addAll(defaultReactions);
           }
-          reactions = reactions.toSet().toList().sublist(0, widget.limit);
+          reactions = reactions.toSet().toList().sublist(0, cappedLimit);
           return _buildReactions(context, reactions);
         } else if (snapshot.hasError) {
           return Text('${snapshot.error}');
         }
-        return const CircularProgressIndicator();
+        return widget.customLoader ??
+            Container(
+              constraints: BoxConstraints(maxHeight: widget.emojiStyle.size),
+              child: ListView.builder(
+                itemCount: cappedLimit,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  return Container(
+                    width: widget.emojiStyle.size,
+                    height: widget.emojiStyle.size,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    decoration: BoxDecoration(
+                      color: widget.emojiStyle.backgroundColor ??
+                          Theme.of(context).cardColor.withOpacity(0.5),
+                      borderRadius: widget.emojiStyle.borderRadius ??
+                          BorderRadius.circular(5),
+                    ),
+                  );
+                },
+                scrollDirection: Axis.horizontal,
+              ),
+            );
       },
     );
   }
 
   Widget _buildReactions(BuildContext context, List<String> reactions) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        for (var reaction in reactions) _buildReaction(reaction, context),
-        if (widget.allowMoreView) _buildMoreButton(context)
-      ],
+    return Container(
+      constraints: BoxConstraints(maxHeight: widget.emojiStyle.size * 2),
+      child: ListView.builder(
+        itemCount: reactions.length + (widget.allowMoreView ? 1 : 0),
+        shrinkWrap: true,
+        itemBuilder: (context, index) {
+          if (widget.leadingMoreButton && index == 0 && widget.allowMoreView) {
+            return _buildMoreButton(context);
+          }
+          if (!widget.leadingMoreButton &&
+              index == reactions.length &&
+              widget.allowMoreView) {
+            return _buildMoreButton(context);
+          }
+          return _buildReaction(
+              reactions[index - (widget.leadingMoreButton ? 1 : 0)], context);
+        },
+        scrollDirection: Axis.horizontal,
+      ),
     );
   }
 
@@ -179,7 +273,7 @@ class _ReactionsState extends State<Reactions> {
               showVariationsOnHold: widget.showVariationsOnHold,
               reactionWidgetController: _reactionWidgetController,
               onReactionSelected: widget.onReactionSelected,
-              customReactionLimit: widget.limit,
+              customReactionLimit: cappedLimit,
               emojiStyle: widget.emojiStyle,
               size: widget.size,
               backgroundColor: widget.backgroundColor,
@@ -215,7 +309,7 @@ class _ReactionsState extends State<Reactions> {
                 showVariationsOnHold: widget.showVariationsOnHold,
                 reactionWidgetController: _reactionWidgetController,
                 onReactionSelected: widget.onReactionSelected,
-                customReactionLimit: widget.limit,
+                customReactionLimit: cappedLimit,
                 emojiStyle: widget.emojiStyle,
                 emojiHorizontalFit: widget.emojiHorizontalFit ?? 0.3,
                 emojiVerticalFit: widget.emojiVerticalFit ?? 0.3,
@@ -228,7 +322,6 @@ class _ReactionsState extends State<Reactions> {
     setState(() {});
   }
 }
-
 
 extension EmojiGroupExt on EmojiGroup {
   List<EmojiGroup> get all => [

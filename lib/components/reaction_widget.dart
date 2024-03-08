@@ -107,8 +107,8 @@ class ReactionWidget extends StatelessWidget {
 
   void _handleReact(BuildContext context, String reaction) async {
     if (!disableDefaultAction) {
-      ReactionProvider provider = ReactionProvider();
-      await provider.insert(Reaction(
+     
+      await ReactionProvider.instance.insert(Reaction(
           emoji: reaction, timestamp: DateTime.now().millisecondsSinceEpoch));
       if (context.mounted) {
         Navigator.of(context).pop();

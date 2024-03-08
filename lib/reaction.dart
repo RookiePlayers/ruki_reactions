@@ -41,10 +41,15 @@ class Reaction {
 
 class ReactionProvider {
   Database? db;
-  int maxCustomEmojis;
-  ReactionProvider({this.maxCustomEmojis = 5});
+  bool _isOpened = false;
+  //make singleton
+  static final ReactionProvider instance = ReactionProvider._internal();
+  ReactionProvider._internal();
+
   Future<void> open() async {
-    sqfliteFfiInit();
+    if(_isOpened) return;
+    try{
+      sqfliteFfiInit();
 
     final factory = kIsWeb ? databaseFactoryFfiWeb : databaseFactoryFfi;
     db = await (kIsWeb
@@ -59,10 +64,13 @@ class ReactionProvider {
             $columnCount integer not null,
             $columnTimestamp integer not null)
           ''');
-        
-    if (kDebugMode) {
-      print('DB opened');
+      _isOpened = true;
+    }catch(e){
+      if(kDebugMode){
+        print('Error opening db: $e');
+      }
     }
+    
   }
 
   Future<void> openCustomReactions() async {
@@ -107,7 +115,6 @@ class ReactionProvider {
     }
     if (db == null) {
       return Future.value(null);
-      
     }
     reaction.timestamp = DateTime.now().millisecondsSinceEpoch;
     Reaction? existing =
@@ -175,8 +182,6 @@ class ReactionProvider {
     return null;
   }
 
-  
-
   Future<List<Reaction>> getRecentlyUsedReactions({int? limit}) async {
     if (db == null) {
       await open();
@@ -220,6 +225,40 @@ class ReactionProvider {
         where: '$columnId = ?', whereArgs: [reaction.id]);
   }
 
+  Future<bool> clearHistory() async {
+    if (db == null) {
+      await open();
+    }
+    if (db == null) {
+      return Future.value(false);
+    }
+    await db!.delete(tableName);
+    return true;
+  }
+
+  Future<bool> clearCustomReactions() async {
+    if (db == null) {
+      await openCustomReactions();
+    }
+    if (db == null) {
+      return Future.value(false);
+    }
+    await db!.delete(tableCutomEmoji);
+    return true;
+  }
+
+  Future<bool> removeCustomReaction(String emoji) async {
+    if (db == null) {
+      await openCustomReactions();
+    }
+    if (db == null) {
+      return Future.value(false);
+    }
+    await db!
+        .delete(tableCutomEmoji, where: '$columnEmoji = ?', whereArgs: [emoji]);
+    return true;
+  }
+
   Future<void> close() async {
     if (db != null) {
       await db!.close();
@@ -227,20 +266,30 @@ class ReactionProvider {
   }
 }
 
-
 final List<String> defaultReactions = [
-  '😀',
+  '❤️',
   '😂',
   '😍',
   '😢',
   '😡',
   '👍',
-  '👎'
+  '👎',
+  '👏',
+  '🙌',
+  '🤔',
+  '🤣',
+  '🤩',
+  '🤪',
+  '🥰',
+  '🥺',
+  '🥳',
+  '🦄',
+  '🦋',
+  '🧐',
 ];
 Future<List<String>> getCustomReactions({int limit = 5}) async {
-  ReactionProvider provider = ReactionProvider();
   List<Reaction> reactionsData =
-      await provider.getCustomReactions(limit: limit);
+      await ReactionProvider.instance.getCustomReactions(limit: limit);
   List<String> reactions = reactionsData.map((e) => e.emoji).toSet().toList();
 
   if (reactions.length < limit) {
@@ -251,29 +300,30 @@ Future<List<String>> getCustomReactions({int limit = 5}) async {
 }
 
 Future<bool> updateRecentlyAdded(String emoji) async {
-  ReactionProvider provider = ReactionProvider();
-  await provider.insert(
+  await ReactionProvider.instance.insert(
       Reaction(emoji: emoji, timestamp: DateTime.now().millisecondsSinceEpoch));
   return true;
 }
 
 //recently used reactions - custom reactions - most used reactions - default reactions
-Future<List<String>> getRecentlyAdded({int limit = 5}) async {
-  ReactionProvider provider = ReactionProvider();
+Future<List<String>> getRecentlyAdded(
+    {int limit = 5, List<String>? customDefaultReactions}) async {
   List<Reaction> reactionsData =
-      await provider.getRecentlyUsedReactions(limit: limit);
+      await ReactionProvider.instance.getRecentlyUsedReactions(limit: limit);
   List<String> reactions = reactionsData.map((e) => e.emoji).toSet().toList();
   if (reactions.length < limit) {
     List<String> defaultReactionsData = await getMostUsedReactions();
     reactions.addAll(defaultReactionsData);
   }
-  return reactions;
+  if (customDefaultReactions != null) {
+    reactions.insertAll(0, customDefaultReactions);
+  }
+  return reactions.toSet().toList();
 }
 
 Future<List<String>> getMostUsedReactions({int limit = 5}) async {
-  ReactionProvider provider = ReactionProvider();
   List<Reaction> reactionsData =
-      await provider.getMostUsedReactions(limit: limit);
+      await ReactionProvider.instance.getMostUsedReactions(limit: limit);
   List<String> reactions = reactionsData.map((e) => e.emoji).toSet().toList();
   if (reactions.length < defaultReactions.length) {
     reactions.addAll(defaultReactions);
@@ -287,15 +337,15 @@ Future<bool> replaceEmoji(
     int limit = 5,
     Function(String)? onReplaced}) async {
   if (emojiToReplace == null) return false;
-  ReactionProvider provider = ReactionProvider();
-  List<String> reactions = (await provider.getCustomReactions())
-      .map((e) => e.emoji)
-      .take(limit)
-      .toList();
+  List<String> reactions =
+      (await ReactionProvider.instance.getCustomReactions())
+          .map((e) => e.emoji)
+          .take(limit)
+          .toList();
   if (reactions.contains(newEmoji)) {
     return false;
   }
-  await provider.insertCustomReactions(
+  await ReactionProvider.instance.insertCustomReactions(
       Reaction(
           emoji: newEmoji, timestamp: DateTime.now().millisecondsSinceEpoch),
       replace: emojiToReplace);
@@ -304,10 +354,8 @@ Future<bool> replaceEmoji(
 }
 
 Future<bool> addAllDefaultToCustom() async {
-  ReactionProvider provider = ReactionProvider();
-
   for (var reaction in defaultReactions.reversed) {
-    await provider.insertCustomReactions(Reaction(
+    await ReactionProvider.instance.insertCustomReactions(Reaction(
         emoji: reaction, timestamp: DateTime.now().millisecondsSinceEpoch));
   }
   return true;
