@@ -28,5 +28,8 @@
 ## 0.0.3
 * Custom mode: sqlflite lib wasn't opened properly, fixed.
 
-## 0.0.3-hotfix.1
+## 0.0.4-hotfix.1
 * sqlflite lib closed error fix
+
+## 0.0.4-hotfix.2
+* sqlflite lib closed error fix: removed openCustomReactions

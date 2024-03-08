@@ -44,68 +44,52 @@ class ReactionProvider {
   bool _isOpened = false;
   //make singleton
   static final ReactionProvider instance = ReactionProvider._internal();
-  ReactionProvider._internal();
+  ReactionProvider._internal() {
+    open();
+  }
 
   Future<void> open() async {
-   if(_isOpened && (db?.isOpen ?? false)) return;
-    try{
+    if (_isOpened && (db!=null && db!.isOpen)) return;
+    try {
       sqfliteFfiInit();
 
-    final factory = kIsWeb ? databaseFactoryFfiWeb : databaseFactoryFfi;
-    db = await (kIsWeb
-        ? factory.openDatabase('reactions.db')
-        : sqflite.openDatabase('reactions.db'));
-    if (db == null) {
-      return Future.value(null);
-    }
-    await db!.execute('''CREATE TABLE IF NOT EXISTS $tableName ( 
+      final factory = kIsWeb ? databaseFactoryFfiWeb : databaseFactoryFfi;
+      db = await (kIsWeb
+          ? factory.openDatabase('reactions.db')
+          : sqflite.openDatabase('reactions.db'));
+      if (db == null) {
+        return Future.value(null);
+      }
+      await db!.execute('''CREATE TABLE IF NOT EXISTS $tableName ( 
             $columnId integer primary key autoincrement, 
             $columnEmoji text not null,
             $columnCount integer not null,
             $columnTimestamp integer not null)
           ''');
+
+      await db!.execute('''CREATE TABLE IF NOT EXISTS $tableCutomEmoji ( 
+            $columnId integer primary key autoincrement, 
+            $columnEmoji text not null,
+            $columnCount integer not null,
+            $columnTimestamp integer not null)
+          ''');
+
+      if (kDebugMode) {
+        print('RukiReactions SQflite: DB opened');
+      }
       _isOpened = true;
-    }catch(e){
-      if(kDebugMode){
-        print('Error opening db: $e');
-      }
-    }
-    
-  }
-
-  Future<void> openCustomReactions() async {
-     if(_isOpened && (db?.isOpen ?? false)) return;
-    try{
-      sqfliteFfiInit();
-    sqfliteFfiInit();
-    final factory = kIsWeb ? databaseFactoryFfiWeb : databaseFactoryFfi;
-    db = await (kIsWeb
-        ? factory.openDatabase('reactions.db')
-        : sqflite.openDatabase('reactions.db'));
-    if (db == null) {
-      return Future.value(null);
-    }
-    await db!.execute('''CREATE TABLE IF NOT EXISTS $tableCutomEmoji ( 
-            $columnId integer primary key autoincrement, 
-            $columnEmoji text not null,
-            $columnCount integer not null,
-            $columnTimestamp integer not null)
-          ''');
-           _isOpened = true;
-    }catch(e){
-      if(kDebugMode){
+    } catch (e) {
+      if (kDebugMode) {
         print('Error opening db: $e');
       }
     }
   }
 
-  Future<Reaction?> insert(Reaction reaction) async {
-    if (db == null) {
-      await open();
-    }
+ Future<Reaction?> insert(Reaction reaction) async {
     if (db == null) {
       return Future.value(null);
     }
+    await open();
     reaction.timestamp = DateTime.now().millisecondsSinceEpoch;
     if (await getReaction(reaction.emoji) != null) {
       reaction.count++;
@@ -120,11 +104,9 @@ class ReactionProvider {
   Future<Reaction?> insertCustomReactions(Reaction reaction,
       {String? replace}) async {
     if (db == null) {
-      await openCustomReactions();
-    }
-    if (db == null) {
       return Future.value(null);
     }
+    await open();
     reaction.timestamp = DateTime.now().millisecondsSinceEpoch;
     Reaction? existing =
         await getCustomReaction(emoji: replace ?? reaction.emoji);
@@ -140,11 +122,9 @@ class ReactionProvider {
 
   Future<Reaction?> getReaction(String emoji) async {
     if (db == null) {
-      await open();
-    }
-    if (db == null) {
       return Future.value(null);
     }
+    await open();
     List<Map<String, Object?>> maps = await db!.query(tableName,
         columns: [columnId, columnEmoji, columnCount, columnTimestamp],
         where: '$columnEmoji = ?',
@@ -157,11 +137,9 @@ class ReactionProvider {
 
   Future<List<Reaction>> getCustomReactions({int limit = 5}) async {
     if (db == null) {
-      await openCustomReactions();
-    }
-    if (db == null) {
       return Future.value([]);
     }
+    await open();
     List<Map<String, Object?>> maps = await db!.query(tableCutomEmoji,
         columns: [columnId, columnEmoji, columnCount, columnTimestamp],
         limit: limit,
@@ -176,11 +154,9 @@ class ReactionProvider {
       return Future.value(null);
     }
     if (db == null) {
-      openCustomReactions();
-    }
-    if (db == null) {
       return Future.value(null);
     }
+    await open();
     List<Map<String, Object?>> maps = await db!.query(tableCutomEmoji,
         columns: [columnId, columnEmoji, columnCount, columnTimestamp],
         where: emoji != null ? '$columnEmoji = ?' : '$columnId = ?',
@@ -193,11 +169,9 @@ class ReactionProvider {
 
   Future<List<Reaction>> getRecentlyUsedReactions({int? limit}) async {
     if (db == null) {
-      await open();
-    }
-    if (db == null) {
       return Future.value([]);
     }
+    await open();
     List<Map<String, Object?>> maps = await db!.query(tableName,
         columns: [columnId, columnEmoji, columnCount, columnTimestamp],
         limit: limit,
@@ -209,11 +183,9 @@ class ReactionProvider {
 
   Future<List<Reaction>> getMostUsedReactions({int limit = 5}) async {
     if (db == null) {
-      await open();
-    }
-    if (db == null) {
       return Future.value([]);
     }
+    await open();
     List<Map<String, Object?>> maps = await db!.query(tableName,
         columns: [columnId, columnEmoji, columnCount, columnTimestamp],
         limit: limit,
@@ -225,44 +197,36 @@ class ReactionProvider {
 
   Future<int> update(Reaction reaction, {String table = tableName}) async {
     if (db == null) {
-      await open();
-    }
-    if (db == null) {
       return Future.value(0);
     }
+    await open();
     return await db!.update(table, reaction.toMap(),
         where: '$columnId = ?', whereArgs: [reaction.id]);
   }
 
   Future<bool> clearHistory() async {
     if (db == null) {
-      await open();
-    }
-    if (db == null) {
       return Future.value(false);
     }
+    await open();
     await db!.delete(tableName);
     return true;
   }
 
   Future<bool> clearCustomReactions() async {
     if (db == null) {
-      await openCustomReactions();
-    }
-    if (db == null) {
       return Future.value(false);
     }
+    await open();
     await db!.delete(tableCutomEmoji);
     return true;
   }
 
   Future<bool> removeCustomReaction(String emoji) async {
     if (db == null) {
-      await openCustomReactions();
-    }
-    if (db == null) {
       return Future.value(false);
     }
+    await open();
     await db!
         .delete(tableCutomEmoji, where: '$columnEmoji = ?', whereArgs: [emoji]);
     return true;
