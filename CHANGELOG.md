@@ -33,3 +33,6 @@
 
 ## 0.0.4-hotfix.2
 * sqlflite lib closed error fix: removed openCustomReactions
+
+## 0.0.4-hotfix.3
+* sqlflite lib closed error fix: removed openCustomReactions

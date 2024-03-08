@@ -49,7 +49,7 @@ class ReactionProvider {
   }
 
   Future<void> open() async {
-    if (_isOpened && (db!=null && db!.isOpen)) return;
+    if ((db!=null && db!.isOpen)) return;
     try {
       sqfliteFfiInit();
 
