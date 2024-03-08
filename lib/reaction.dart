@@ -262,6 +262,7 @@ class ReactionProvider {
   Future<void> close() async {
     if (db != null) {
       await db!.close();
+      _isOpened = false;
     }
   }
 }

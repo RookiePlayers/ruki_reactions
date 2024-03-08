@@ -155,7 +155,8 @@ class _ReactionsState extends State<Reactions> {
           if (reactions.length < cappedLimit) {
             reactions.addAll(defaultReactions);
           }
-          reactions = reactions.toSet().toList().sublist(0, cappedLimit);
+          reactions = reactions.toSet().toList();
+          reactions = reactions.sublist(0, min(cappedLimit, reactions.length));
           return _buildReactions(context, reactions);
         } else if (snapshot.hasError) {
           return Text('${snapshot.error}');

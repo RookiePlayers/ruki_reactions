@@ -77,18 +77,20 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             Center(
                 child: SizedBox(
-                    width: 300,
-                    child: Reactions(
-                      useHistory: false,
-                      limit: 100,
-                      customDefaultReactions: ['👍', '👎', '😂', '😢', '😡'],
-                      leadingMoreButton: true,
-                      enableCustom: false,
-                      onReactionSelected: (e) {
-                        setState(() {
-                          emoji = e;
-                        });
-                      },
+                    width: MediaQuery.of(context).size.width,
+                    child: Padding(
+                      padding: const EdgeInsets.all(28.0),
+                      child: Reactions(
+                        useHistory: false,
+                        limit: 100,
+                        customDefaultReactions: ['👍', '👎', '😂', '😢', '😡'],
+                        enableCustom: false,
+                        onReactionSelected: (e) {
+                          setState(() {
+                            emoji = e;
+                          });
+                        },
+                      ),
                     ))),
           ],
         ),
